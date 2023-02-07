@@ -1,3 +1,6 @@
+local scores = {}
+local serpent = require('src.serpent')
+
 function love.load()
     target = {}
     target.x = 300
@@ -5,7 +8,7 @@ function love.load()
     target.radius = 50
 
     score = 0
-    timer = 0
+    timer = 20
     gameState = 1
 
     gameFont = love.graphics.newFont(40)
@@ -16,16 +19,28 @@ function love.load()
     sprites.crosshairs = love.graphics.newImage('sprites/crosshairs.png')
 
     love.mouse.setVisible(false)
-end
+    
+    -- Load the high score table from a file, if it exists
 
-function love.update(dt)
-    if timer > 0 then
-        timer = timer - dt
+    if love.filesystem.getInfo('src/scores.lua') then
+        local data = love.filesystem.load('src/scores.lua')
+        scores = data()
+      end
+      
+      for i, score in ipairs(scores) do
+        print(string.format("%2d. %5d", i, score))
+      end
     end
-
-    if timer < 0 then
-        timer = 0
-        gameState = 1
+function love.update(dt)
+    if gameState == 2 then
+      timer = timer - dt -- decrement the timer each frame
+      if timer <= 0 then
+        -- Save the current score to the high score table
+        table.insert(scores, score)
+        table.sort(scores, function(a, b) return a > b end)
+        love.filesystem.write('src/scores.lua', "return " .. serpent.dump(scores))
+        
+        gameState = 1 -- change game state to end game when timer reaches 0
     end
 end
 
@@ -39,9 +54,15 @@ function love.draw()
     
     if gameState == 1 then
         love.graphics.setColor(1, 1, 1, 1) --set setColor
-        love.graphics.printf("Shooting Jam", 0, 200, love.graphics.getWidth(), "center")
-        love.graphics.printf("Click to begin!", 0, 450, love.graphics.getWidth(), "center")
-end
+        love.graphics.printf("Shooting Jam", 0, 100, love.graphics.getWidth(), "center")
+        love.graphics.printf("Click to begin!", 0, 250, love.graphics.getWidth(), "center")
+        love.graphics.printf("High Score:", 0, 425, love.graphics.getWidth(), "center")
+        local y = 550
+        for i, v in ipairs(scores) do
+            love.graphics.print(v, love.graphics.getWidth() / 2, 500)
+            y = y + 50
+        end
+    end
 
     if gameState == 2 then
         love.graphics.draw(sprites.target, target.x - target.radius, target.y - target.radius)
@@ -68,7 +89,7 @@ function love.mousepressed(x, y, button, istouch, presses)
         end
     elseif button == 1 and gameState == 1 then
         gameState = 2
-        timer = 10
+        timer = 20
         score = 0
     end
 end
@@ -85,4 +106,15 @@ end
 
 function distanceBetween(x1, y1, x2, y2)
     return math.sqrt((x2 - x1)^2 + (y2 - y1)^2)
+end
+function serialize(t)
+    local s = {}
+    for k, v in pairs(t) do
+        s[#s + 1] = k .. "=" .. v
+    end
+    return table.concat(s, "\n")
+end
+function love.quit()
+    love.filesystem.write('scores.lua', 'return ' .. serialize(scores))
+  end
 end
