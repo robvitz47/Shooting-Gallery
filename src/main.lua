@@ -48,10 +48,11 @@ function love.update(dt)
         end
         if target.y < target.radius or target.y > love.graphics.getHeight() - target.radius then
             target.dy = -target.dy
-        end
+        end        
         if target.y < target.radius or target.y > love.graphics.getHeight() - target.radius then
             target.dy = -target.dy -- reverse direction when target hits the wall
     end
+    timer = timer - dt
 end
     if timer <= 0 then
         -- Save the current score to the high score table
@@ -86,7 +87,16 @@ function love.draw()
     end
     love.graphics.draw(sprites.crosshairs, love.mouse.getX() - 20, love.mouse.getY() - 20)
 end
-
+target.x = target.x + target.dx * dt
+target.y = target.y + target.dy * dt
+if target.x < target.radius or target.x > love.graphics.getWidth() - target.radius then
+    target.dx = -target.dx -- reverse direction when target hits the wall
+end
+if target.y < target.radius or target.y > love.graphics.getHeight() - target.radius then
+    target.dy = -target.dy -- reverse direction when target hits the wall
+end
+end
+    
 function love.mousepressed(x, y, button, istouch, presses)
     if gameState == 2 then
         local mouseToTarget = distanceBetween(x, y, target.x, target.y)
@@ -133,5 +143,4 @@ function serialize(t)
 end
 function love.quit()
     love.filesystem.write('scores.lua', 'return ' .. serialize(scores))
-end
 end

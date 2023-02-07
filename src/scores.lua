@@ -1,1 +1,1 @@
-return {scores}
+return {}
