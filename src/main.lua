@@ -10,6 +10,9 @@ function love.load()
     score = 0
     timer = 20
     gameState = 1
+    speed = 200
+    target.dx = 100
+    target.dy = 100
 
     gameFont = love.graphics.newFont(40)
 
@@ -33,8 +36,24 @@ function love.load()
     end
 function love.update(dt)
     if gameState == 2 then
-      timer = timer - dt -- decrement the timer each frame
-      if timer <= 0 then
+        -- ...
+        local randomNumberX = math.random(-1, 1) -- generates a random number between -1 and 1 for x-coordinate
+        local randomNumberY = math.random(-1, 1) -- generates a random number between -1 and 1 for y-coordinate
+        target.x = target.x + randomNumberX * dt * speed -- change target x-coordinate with random movement
+        target.y = target.y + randomNumberY * dt * speed -- change target y-coordinate with random movement
+        target.x = target.x + target.dx * dt
+        target.y = target.y + target.dy * dt
+        if target.x < target.radius or target.x > love.graphics.getWidth() - target.radius then
+            target.dx = -target.dx
+        end
+        if target.y < target.radius or target.y > love.graphics.getHeight() - target.radius then
+            target.dy = -target.dy
+        end
+        if target.y < target.radius or target.y > love.graphics.getHeight() - target.radius then
+            target.dy = -target.dy -- reverse direction when target hits the wall
+    end
+end
+    if timer <= 0 then
         -- Save the current score to the high score table
         table.insert(scores, score)
         table.sort(scores, function(a, b) return a > b end)
@@ -42,8 +61,6 @@ function love.update(dt)
         
         gameState = 1 -- change game state to end game when timer reaches 0
     end
-end
-
 function love.draw()
     love.graphics.draw(sprites.sky, 0, 0)
 
@@ -116,5 +133,5 @@ function serialize(t)
 end
 function love.quit()
     love.filesystem.write('scores.lua', 'return ' .. serialize(scores))
-  end
+end
 end
